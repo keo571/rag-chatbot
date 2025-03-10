@@ -1,0 +1,71 @@
+/* App.css */
+:root {
+    --primary-color: #4a6bef;
+    --primary-light: #eef1fe;
+    --secondary-color: #45a29e;
+    --text-color: #333;
+    --light-text: #666;
+    --border-color: #e0e0e0;
+    --light-gray: #f5f5f5;
+    --white: #ffffff;
+    --user-msg-bg: #f0f7ff;
+    --assistant-msg-bg: #f9f9f9;
+    --error-color: #e53935;
+    --success-color: #43a047;
+    --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+.app-container {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+}
+
+.chat-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: var(--white);
+    position: relative;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scroll-behavior: smooth;
+}
+
+.welcome-message {
+    text-align: center;
+    max-width: 600px;
+    margin: auto;
+    padding: 40px 20px;
+}
+
+.welcome-message h1 {
+    font-size: 2rem;
+    margin-bottom: 16px;
+    color: var(--primary-color);
+}
+
+.welcome-message p {
+    color: var(--light-text);
+    font-size: 1.1rem;
+}
