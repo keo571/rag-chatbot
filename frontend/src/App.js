@@ -89,13 +89,17 @@ function App() {
   };
 
   const handleDeleteDocument = async (docId) => {
-    if (!window.confirm('Are you sure you want to delete this document?')) {
+    // Find the document to get its title before deletion
+    const documentToDelete = documents.find(doc => doc.id === docId);
+    const documentTitle = documentToDelete ? documentToDelete.title : 'Unknown document';
+
+    if (!window.confirm(`Are you sure you want to delete "${documentTitle}"?`)) {
       return;
     }
 
     try {
       await deleteDocument(docId);
-      addSystemMessage('Document has been removed from my knowledge base.');
+      addSystemMessage(`I've removed "${documentTitle}" from my knowledge base.`);
     } catch (error) {
       alert(`Deletion failed: ${error.message}`);
     }
@@ -133,6 +137,12 @@ function App() {
       />
 
       <main className="chat-container">
+        <div className="chat-header">
+          <div className="header-content">
+            <h1>NetBot</h1>
+          </div>
+        </div>
+
         <div className="chat-messages">
           {messages.length === 0 ? (
             <div className="welcome-message">

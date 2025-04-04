@@ -2,6 +2,7 @@ import uuid
 import shutil
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from typing import List, Optional
+from datetime import datetime
 
 from models.schemas import DocumentInfo, URLSubmission, DocumentResponse
 from services.document import DocumentService
@@ -10,14 +11,12 @@ from config.settings import UPLOAD_DIR
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 vector_store_service = VectorStoreService()
-
 @router.post("/upload/file", response_model=DocumentInfo)
 async def upload_file(
     file: UploadFile = File(...),
     title: Optional[str] = Form(None)
 ):
     """Upload and process a document file."""
-    # Generate unique ID
     doc_id = str(uuid.uuid4())
     
     # Create directory for document
@@ -25,29 +24,32 @@ async def upload_file(
     doc_dir.mkdir(exist_ok=True)
     
     try:
-        # Save file
+        # Save file to disk
         file_path = doc_dir / file.filename
         with open(file_path, "wb") as f:
             shutil.copyfileobj(file.file, f)
         
-        # Store metadata first
-        doc_title = title if title else file.filename
-        DocumentService.store_document_metadata(doc_id, doc_title, "file", str(file_path))
+        # Create metadata - only use custom title if provided
+        metadata = DocumentInfo(
+            id=doc_id,
+            title=title,  
+            source_type=DocumentService._infer_source_type(file.filename),
+            source_path=file.filename,  
+            created_at=datetime.now().isoformat()
+        )
         
-        # Process document
-        loader = DocumentService.get_loader_for_file(str(file_path))
+        # Process document with metadata
+        loader = DocumentService.get_loader_for_file(str(file_path), metadata)
         documents = loader.load()
         
-        # Add to vector store with metadata
-        vector_store_service.add_documents(documents, str(file_path))
+        # Add to vector store
+        vector_store_service.add_documents(documents)
         
-        return DocumentInfo(
-            id=doc_id,
-            title=doc_title,
-            source_type="file",
-            source_path=str(file_path),
-            created_at=""  # Will be filled by DB
-        )
+        # Store metadata in DB after successful vector store addition
+        DocumentService.store_document_metadata(metadata)
+        
+        return metadata
+        
     except Exception as e:
         # Clean up on failure
         shutil.rmtree(doc_dir)
@@ -62,26 +64,28 @@ async def upload_url(submission: URLSubmission):
         # Generate title if not provided
         title = submission.title or DocumentService.get_url_title(submission.url)
         
-        # Store metadata first
-        DocumentService.store_document_metadata(doc_id, title, "url", submission.url)
+        # Create metadata once
+        metadata = DocumentInfo(
+            id=doc_id,
+            title=title,
+            source_type="url",
+            source_path=submission.url,
+            created_at=datetime.now()  # You'll need to import datetime
+        )
         
         try:
-            # Process URL
-            documents = DocumentService.process_url(submission.url)
+            # Process URL with metadata
+            documents = DocumentService.process_url(submission.url, metadata)
             
             # Add to vector store
-            vector_store_service.add_documents(documents, submission.url)
+            vector_store_service.add_documents(documents)
             
-            return DocumentInfo(
-                id=doc_id,
-                title=title,
-                source_type="url",
-                source_path=submission.url,
-                created_at=""  # Will be filled by DB
-            )
+            # Store metadata in DB after successful vector store addition
+            DocumentService.store_document_metadata(metadata)
+            
+            return metadata
+            
         except Exception as e:
-            # If processing fails, clean up the metadata
-            DocumentService.delete_document(doc_id)
             raise HTTPException(status_code=400, detail=f"Error processing URL content: {str(e)}")
             
     except Exception as e:

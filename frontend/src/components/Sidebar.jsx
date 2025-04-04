@@ -5,12 +5,19 @@ import '../styles/Sidebar.css';
 
 const Sidebar = ({ documents, onUpload, onAddUrl, onDeleteDocument }) => {
     const getDisplayTitle = (doc) => {
+        // For URLs, just show the title
         if (doc.source_type === 'url') {
             return doc.title;
         }
-        // For files, show both title and filename
-        const fileName = doc.source_path.split('/').pop();
-        return doc.title === fileName ? doc.title : `${doc.title} (${fileName})`;
+
+        // For files
+        // If there's a custom title, show "title (filename)"
+        if (doc.title !== doc.source_path) {
+            return `${doc.title} (${doc.source_path})`;
+        }
+
+        // If no custom title or title is same as filename, just show the filename
+        return doc.source_path;
     };
 
     return (
@@ -44,8 +51,12 @@ const Sidebar = ({ documents, onUpload, onAddUrl, onDeleteDocument }) => {
                     documents.map(doc => (
                         <div key={doc.id} className="document-item">
                             <div className="document-info">
-                                <span className="document-title">{getDisplayTitle(doc)}</span>
-                                <span className="document-type">{doc.source_type}</span>
+                                <span className="document-title">
+                                    {getDisplayTitle(doc)}
+                                </span>
+                                <span className="document-type">
+                                    {doc.source_type}
+                                </span>
                             </div>
                             <button
                                 className="delete-button"

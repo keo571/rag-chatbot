@@ -4,7 +4,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.7);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -12,39 +12,52 @@
     animation: fadeIn 0.2s ease-out;
 }
 
-.modal {
-    background: var(--white);
-    border-radius: 16px;
-    padding: 24px;
-    width: 90%;
+.modal-content {
+    background-color: var(--bg-secondary);
+    padding: 20px;
+    border-radius: 8px;
     max-width: 500px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    animation: slideUp 0.3s ease-out;
+    width: 90%;
+    border: 1px solid var(--border-color);
 }
 
-.modal h3 {
-    color: var(--text-color);
-    font-size: 1.5rem;
+.modal-header {
     margin-bottom: 20px;
-    text-align: center;
+    color: var(--text-primary);
 }
 
-.modal-form {
+.modal-body {
+    margin-bottom: 20px;
+}
+
+.modal-footer {
     display: flex;
-    flex-direction: column;
-    gap: 20px;
+    justify-content: flex-end;
+    gap: 10px;
 }
 
 .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    margin-bottom: 15px;
 }
 
 .form-group label {
-    color: var(--text-color);
-    font-weight: 500;
-    font-size: 0.95rem;
+    display: block;
+    margin-bottom: 5px;
+    color: var(--text-primary);
+}
+
+.form-group input {
+    width: 100%;
+    padding: 8px;
+    border-radius: 4px;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.form-group input:focus {
+    border-color: var(--accent-color);
+    outline: none;
 }
 
 .form-group input[type="text"],

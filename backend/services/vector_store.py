@@ -5,6 +5,7 @@ from langchain.docstore.document import Document
 from typing import List
 import chromadb
 from pathlib import Path
+import traceback
 
 from config.settings import (
     VECTORDB_DIR,
@@ -13,7 +14,6 @@ from config.settings import (
     CHUNK_OVERLAP,
     VECTOR_SEARCH_TOP_K
 )
-from services.document import DocumentService
 
 class VectorStoreService:
     def __init__(self):
@@ -41,31 +41,21 @@ class VectorStoreService:
             chunk_overlap=CHUNK_OVERLAP
         )
 
-    def add_documents(self, documents: List[Document], source_path: str):
-        """Add documents to vector store with metadata."""
+    def add_documents(self, documents: List[Document]):
+        """Add documents to vector store with metadata.
+        
+        Args:
+            documents: List of documents to add (with metadata already attached)
+        """
+        # Split documents while preserving metadata
         splits = self.text_splitter.split_documents(documents)
         
-        # Get document metadata
-        doc_metadata = DocumentService.get_document_metadata_by_path(source_path)
-        if doc_metadata:
-            # Add metadata to each split
-            for i, split in enumerate(splits):
-                # Create unique ID for each split
-                split_id = f"{doc_metadata.id}_{i}"
-                
-                # Prepare metadata for ChromaDB
-                metadata = {
-                    "title": doc_metadata.title,
-                    "source_type": doc_metadata.source_type,
-                    "source_path": doc_metadata.source_path,
-                    "doc_id": doc_metadata.id,
-                    "split_id": split_id
-                }
-                
-                # Update split metadata
-                split.metadata = metadata
+        # Update split_id for each chunk
+        for i, split in enumerate(splits):
+            doc_id = split.metadata["doc_id"]
+            split.metadata["split_id"] = f"{doc_id}_{i}"
         
-        # Add documents to vector store
+        # Add to vector store
         self.vector_store.add_documents(splits)
 
     def get_retriever(self):
@@ -82,4 +72,42 @@ class VectorStoreService:
         return self.vector_store.similarity_search(
             query,
             k=VECTOR_SEARCH_TOP_K
-        ) 
+        )
+
+    def delete_document(self, document_id: str) -> bool:
+        """Delete a document and its embeddings from the vector store.
+        
+        Args:
+            document_id: The unique identifier of the document to delete
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            print(f"Deleting document with ID: {document_id} from vector store")
+            collection = self.client.get_collection("documents")
+            
+            # Query to find all chunks from this document
+            results = collection.get(
+                where={"doc_id": document_id}
+            )
+            
+            if not results or len(results["ids"]) == 0:
+                print(f"No embeddings found for document ID: {document_id}")
+                return False
+                
+            # Delete all chunks associated with this document
+            chunk_ids = results["ids"]
+            print(f"Found {len(chunk_ids)} chunks to delete for document ID: {document_id}")
+            
+            collection.delete(
+                ids=chunk_ids
+            )
+            
+            print(f"Successfully deleted embeddings for document ID: {document_id}")
+            return True
+            
+        except Exception as e:
+            print(f"Error deleting document from vector store: {str(e)}")
+            print(traceback.format_exc())
+            return False 
